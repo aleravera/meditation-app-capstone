@@ -27,3 +27,12 @@ As a user, I want detailed information on a selected item so that I can make inf
 As a user, I want to perform actions like saving or sharing an item from the detail screen so that I can share interesting content.
 ### User Story 3 - Related Items
 As a user, I want to view related items on the detail screen so that I can explore more options.
+
+## Persistent Data
+
+### User Story 1 - Persist Login State
+As a user, I want my data like login state to persist across sessions so that I don't need to re-enter details every time.
+### User Story 2 - Save Preferences
+As a user, I want to save my preferences such as dark mode so that the app remembers my settings.
+### User Story 3 - Persist Activity Logs
+As an admin, I want user activity logs to persist so that I can track and analyze trends over time.
