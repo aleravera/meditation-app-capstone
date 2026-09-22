@@ -36,3 +36,44 @@ As a user, I want my data like login state to persist across sessions so that I 
 As a user, I want to save my preferences such as dark mode so that the app remembers my settings.
 ### User Story 3 - Persist Activity Logs
 As an admin, I want user activity logs to persist so that I can track and analyze trends over time.
+
+## External API
+
+### User Story 1 - Weather Updates
+As a user, I want to view real-time weather updates on the home screen so that I can plan my day effectively.
+### User Story 2 - Currency Conversion
+As a user, I want to see live currency conversion rates when making purchases so that I can make informed financial decisions.
+### User Story 3 - Nearby Restaurants
+As a user, I want to see nearby restaurants on a map so that I can choose a dining location conveniently.
+
+
+## Settings Menu
+
+### User Story 1 - Access Settings
+As a user, I want to access a settings menu from any screen so that I can adjust preferences at my convenience.
+### User Story 2 - Categorized Settings
+As a user, I want to see categorized sections in the settings menu so that I can quickly find the options I need.
+### User Story 3 - Admin Settings Control
+As an admin, I want to enable or disable certain settings for users so that I can maintain app security and compliance.
+
+
+## Settings Screen
+
+### User Story 1 - Dark Mode
+As a user, I want to enable dark mode in the settings screen so that I can reduce eye strain during nighttime usage.
+### User Story 2 - Notification Preferences
+As a user, I want to adjust notification preferences so that I only receive alerts relevant to me.
+### User Story 3 - Update Account Information
+As a user, I want to update my email and password on the settings screen so that I can keep my account secure.
+
+
+## Notifications
+
+### User Story 1 - Daily Reminder
+As a user, I want to receive a daily reminder notification so that I don't forget to complete my tasks.
+### User Story 2 - New Feature Notifications
+As a user, I want to receive notifications about new features so that I can explore and benefit from them.
+### User Story 3 - Promotional Notification Control
+As a user, I want to turn off promotional notifications so that I can focus on essential updates only.
+### User Story 4 - Targeted Notifications
+As an admin, I want to send notifications to specific user groups so that I can target them with relevant information.
