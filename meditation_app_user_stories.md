@@ -18,3 +18,12 @@ As a user, I want to view an overview of my data on the home screen so that I ca
 As a new user, I want to see a quick introductory guide on the home screen so that I can learn how to use the app.
 ### User Story 3 - Quick Access
 As a user, I want to access my most-used features from the home screen so that I can navigate the app efficiently.
+
+## Detail Screen
+
+### User Story 1 - Detailed Information
+As a user, I want detailed information on a selected item so that I can make informed decisions.
+### User Story 2 - Save or Share
+As a user, I want to perform actions like saving or sharing an item from the detail screen so that I can share interesting content.
+### User Story 3 - Related Items
+As a user, I want to view related items on the detail screen so that I can explore more options.
