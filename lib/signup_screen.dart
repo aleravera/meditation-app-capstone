@@ -75,7 +75,7 @@ class _SignupScreenState extends State<SignupScreen> {
               constraints: const BoxConstraints(maxWidth: 440),
               child: Card(
                 elevation: 0,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -99,10 +99,14 @@ class _SignupScreenState extends State<SignupScreen> {
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           'Fill in the fields below to get started',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Color(0xFF666B7A)),
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                         const SizedBox(height: 28),
                         TextFormField(

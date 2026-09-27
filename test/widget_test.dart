@@ -1,3 +1,4 @@
+import 'package:capstone_auth_app/app_preferences.dart';
 import 'package:capstone_auth_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +7,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+  });
+
+  test('Settings use defaults and persist all three values', () async {
+    expect(await AppPreferences.readThemeMode(), 'Light');
+    expect(await AppPreferences.readNotificationsEnabled(), isTrue);
+    expect(await AppPreferences.readReminderTime(), '08:00');
+
+    await AppPreferences.saveThemeMode('Dark');
+    await AppPreferences.saveNotificationsEnabled(false);
+    await AppPreferences.saveReminderTime('21:30');
+
+    expect(await AppPreferences.readThemeMode(), 'Dark');
+    expect(await AppPreferences.readFlutterThemeMode(), ThemeMode.dark);
+    expect(await AppPreferences.readNotificationsEnabled(), isFalse);
+    expect(await AppPreferences.readReminderTime(), '21:30');
   });
 
   testWidgets('Login is the initial screen and links to signup', (
@@ -130,5 +146,63 @@ void main() {
 
     expect(find.byKey(const Key('loginError')), findsOneWidget);
     expect(find.text('Incorrect email or password'), findsWidgets);
+  });
+
+  testWidgets('Settings restore values and update theme and notifications', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'username': 'Student',
+      'email': 'student@example.com',
+      'password': 'secret',
+      AppPreferences.themeModeKey: 'Dark',
+      AppPreferences.notificationsEnabledKey: false,
+      AppPreferences.reminderTimeKey: '21:30',
+    });
+    await tester.pumpWidget(
+      const CapstoneAuthApp(initialThemeMode: ThemeMode.dark),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginEmail')),
+      'student@example.com',
+    );
+    await tester.enterText(find.byKey(const Key('loginPassword')), 'secret');
+    await tester.tap(find.byKey(const Key('loginButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('settingsButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('settingsScreen')), findsOneWidget);
+    expect(find.text('21:30'), findsOneWidget);
+    expect(
+      tester
+          .widget<SwitchListTile>(find.byKey(const Key('notificationsSwitch')))
+          .value,
+      isFalse,
+    );
+    expect(
+      Theme.of(
+        tester.element(find.byKey(const Key('settingsScreen'))),
+      ).brightness,
+      Brightness.dark,
+    );
+
+    await tester.tap(find.byKey(const Key('notificationsSwitch')));
+    await tester.pumpAndSettle();
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.getBool(AppPreferences.notificationsEnabledKey), isTrue);
+
+    await tester.tap(find.byKey(const Key('themeModeDropdown')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Light').last);
+    await tester.pumpAndSettle();
+    expect(preferences.getString(AppPreferences.themeModeKey), 'Light');
+    expect(
+      Theme.of(
+        tester.element(find.byKey(const Key('settingsScreen'))),
+      ).brightness,
+      Brightness.light,
+    );
   });
 }

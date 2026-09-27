@@ -3,11 +3,28 @@ import 'package:flutter/material.dart';
 class AppTheme {
   static const _primary = Color(0xFF4355B9);
 
-  static ThemeData get light {
+  static ThemeData get light => _buildTheme(Brightness.light);
+
+  static ThemeData get dark => _buildTheme(Brightness.dark);
+
+  static ThemeData _buildTheme(Brightness brightness) {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: _primary,
+      brightness: brightness,
+    );
+    final isDark = brightness == Brightness.dark;
+
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(seedColor: _primary),
-      scaffoldBackgroundColor: const Color(0xFFF6F7FB),
+      brightness: brightness,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: isDark
+          ? const Color(0xFF121318)
+          : const Color(0xFFF6F7FB),
+      cardTheme: CardThemeData(
+        color: isDark ? const Color(0xFF1D1E25) : Colors.white,
+        elevation: 0,
+      ),
       appBarTheme: const AppBarTheme(
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -15,14 +32,14 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: isDark ? const Color(0xFF1D1E25) : Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFD9DCE8)),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFD9DCE8)),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),

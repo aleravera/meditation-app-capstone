@@ -3,9 +3,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'detail_screen.dart';
 import 'meditation.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, required this.onThemeModeChanged});
+
+  final ValueChanged<ThemeMode> onThemeModeChanged;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -78,18 +81,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showSettings() {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Settings'),
-        content: const Text('Settings are not required for this laboratory.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
+  // Opens the persistent settings required by the storage lab.
+  void _openSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            SettingsScreen(onThemeModeChanged: widget.onThemeModeChanged),
       ),
     );
   }
@@ -119,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             key: const Key('settingsButton'),
             tooltip: 'Settings',
-            onPressed: _showSettings,
+            onPressed: _openSettings,
             icon: const Icon(Icons.account_circle_outlined),
           ),
           const SizedBox(width: 8),
@@ -163,9 +161,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => Navigator.pop(context),
               ),
               ListTile(
+                key: const Key('drawerSettingsButton'),
                 leading: const Icon(Icons.settings_outlined),
                 title: const Text('Settings'),
-                onTap: () => _showMenuPlaceholder('Settings'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openSettings();
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.notifications_outlined),
@@ -217,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     'Find your perfect meditation',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFF666B7A),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -300,7 +302,7 @@ class _PopularMeditationCard extends StatelessWidget {
       child: Card(
         clipBehavior: Clip.antiAlias,
         elevation: 0,
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: InkWell(
           key: Key('meditation-${meditation.title}'),
@@ -345,8 +347,10 @@ class _PopularMeditationCard extends StatelessWidget {
                             meditation.shortDescription,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFF737786),
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                               fontSize: 12,
                             ),
                           ),
@@ -375,7 +379,7 @@ class _DailyMeditationCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       elevation: 0,
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: InkWell(
         key: Key('meditation-${meditation.title}'),
@@ -414,7 +418,9 @@ class _DailyMeditationCard extends StatelessWidget {
                       meditation.shortDescription,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Color(0xFF737786)),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Row(

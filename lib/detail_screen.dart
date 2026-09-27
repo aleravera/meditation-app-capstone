@@ -67,7 +67,7 @@ class DetailScreen extends StatelessWidget {
                   key: const Key('detailDescription'),
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     height: 1.6,
-                    color: const Color(0xFF565B6A),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
