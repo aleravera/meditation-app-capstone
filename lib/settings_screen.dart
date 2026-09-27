@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_preferences.dart';
+import 'preferences_form.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, required this.onThemeModeChanged});
@@ -54,22 +55,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _selectReminderTime() async {
-    final parts = _reminderTime.split(':');
-    final initialTime = TimeOfDay(
-      hour: int.tryParse(parts.first) ?? 8,
-      minute: parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0,
-    );
-    final selectedTime = await showTimePicker(
-      context: context,
-      initialTime: initialTime,
-    );
+    final selectedTime = await pickReminderTime(context, _reminderTime);
     if (selectedTime == null || !mounted) return;
-
-    final formattedTime =
-        '${selectedTime.hour.toString().padLeft(2, '0')}:'
-        '${selectedTime.minute.toString().padLeft(2, '0')}';
-    setState(() => _reminderTime = formattedTime);
-    await AppPreferences.saveReminderTime(formattedTime);
+    setState(() => _reminderTime = selectedTime);
+    await AppPreferences.saveReminderTime(selectedTime);
   }
 
   @override
@@ -96,54 +85,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: DropdownButtonFormField<String>(
-                      key: const Key('themeModeDropdown'),
-                      initialValue: _themeMode,
-                      decoration: const InputDecoration(
-                        labelText: 'Theme Mode',
-                        prefixIcon: Icon(Icons.palette_outlined),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'Light', child: Text('Light')),
-                        DropdownMenuItem(value: 'Dark', child: Text('Dark')),
-                      ],
-                      onChanged: _changeTheme,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Card(
-                  child: SwitchListTile(
-                    key: const Key('notificationsSwitch'),
-                    secondary: const Icon(Icons.notifications_outlined),
-                    title: const Text('Notifications'),
-                    subtitle: Text(
-                      _notificationsEnabled ? 'Enabled' : 'Disabled',
-                    ),
-                    value: _notificationsEnabled,
-                    onChanged: _changeNotifications,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Card(
-                  child: ListTile(
-                    key: const Key('reminderTimeTile'),
-                    leading: const Icon(Icons.schedule_outlined),
-                    title: const Text('Reminder Time'),
-                    subtitle: const Text('Daily meditation reminder'),
-                    trailing: Text(
-                      _reminderTime,
-                      key: const Key('reminderTimeValue'),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    onTap: _selectReminderTime,
-                  ),
+                PreferencesForm(
+                  keyPrefix: 'settings',
+                  themeMode: _themeMode,
+                  notificationsEnabled: _notificationsEnabled,
+                  reminderTime: _reminderTime,
+                  onThemeChanged: _changeTheme,
+                  onNotificationsChanged: _changeNotifications,
+                  onReminderTimeTap: _selectReminderTime,
                 ),
               ],
             ),

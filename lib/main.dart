@@ -4,6 +4,7 @@ import 'app_preferences.dart';
 import 'app_theme.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
+import 'preferences_setup_screen.dart';
 import 'signup_screen.dart';
 
 Future<void> main() async {
@@ -46,6 +47,8 @@ class _CapstoneAuthAppState extends State<CapstoneAuthApp> {
       routes: {
         '/login': (_) => const LoginScreen(),
         '/signup': (_) => const SignupScreen(),
+        '/preferences-setup': (_) =>
+            PreferencesSetupScreen(onThemeModeChanged: _setThemeMode),
         '/home': (_) => HomeScreen(onThemeModeChanged: _setThemeMode),
       },
     );

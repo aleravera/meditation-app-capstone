@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_preferences.dart';
+
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
@@ -51,6 +53,8 @@ class _SignupScreenState extends State<SignupScreen> {
     await preferences.setString('username', _usernameController.text.trim());
     await preferences.setString('email', _emailController.text.trim());
     await preferences.setString('password', _passwordController.text);
+    // A newly registered local account must complete first-access onboarding.
+    await AppPreferences.saveOnboardingCompleted(false);
 
     if (!mounted) return;
     setState(() => _isLoading = false);

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_preferences.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -54,8 +56,12 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text == savedPassword;
 
     if (credentialsMatch) {
-      // A valid login starts a fresh navigation stack on the Home screen.
-      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      // First access opens preference setup; later logins go to Home.
+      final onboardingCompleted =
+          await AppPreferences.readOnboardingCompleted();
+      if (!mounted) return;
+      final destination = onboardingCompleted ? '/home' : '/preferences-setup';
+      Navigator.pushNamedAndRemoveUntil(context, destination, (route) => false);
     } else {
       setState(() => _loginError = 'Incorrect email or password');
       ScaffoldMessenger.of(context).showSnackBar(
