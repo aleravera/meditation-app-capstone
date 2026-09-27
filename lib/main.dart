@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_preferences.dart';
 import 'app_theme.dart';
+import 'country_list.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
 import 'preferences_setup_screen.dart';
@@ -14,9 +15,14 @@ Future<void> main() async {
 }
 
 class CapstoneAuthApp extends StatefulWidget {
-  const CapstoneAuthApp({super.key, this.initialThemeMode = ThemeMode.light});
+  const CapstoneAuthApp({
+    super.key,
+    this.initialThemeMode = ThemeMode.light,
+    this.countryLoader,
+  });
 
   final ThemeMode initialThemeMode;
+  final CountryLoader? countryLoader;
 
   @override
   State<CapstoneAuthApp> createState() => _CapstoneAuthAppState();
@@ -46,7 +52,7 @@ class _CapstoneAuthAppState extends State<CapstoneAuthApp> {
       initialRoute: '/login',
       routes: {
         '/login': (_) => const LoginScreen(),
-        '/signup': (_) => const SignupScreen(),
+        '/signup': (_) => SignupScreen(countryLoader: widget.countryLoader),
         '/preferences-setup': (_) =>
             PreferencesSetupScreen(onThemeModeChanged: _setThemeMode),
         '/home': (_) => HomeScreen(onThemeModeChanged: _setThemeMode),

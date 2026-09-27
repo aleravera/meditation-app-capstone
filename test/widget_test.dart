@@ -1,8 +1,17 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:capstone_auth_app/app_preferences.dart';
+import 'package:capstone_auth_app/country_list.dart';
 import 'package:capstone_auth_app/main.dart';
+import 'package:capstone_auth_app/signup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+Future<List<String>> _loadTestCountries() async => ['France', 'Italy'];
 
 void main() {
   setUp(() {
@@ -27,10 +36,74 @@ void main() {
     expect(await AppPreferences.readOnboardingCompleted(), isTrue);
   });
 
+  test('CountryService parses, deduplicates and sorts valid names', () async {
+    final client = MockClient((request) async {
+      expect(request.url.path, CountryService.endpoint.path);
+      expect(request.url.queryParameters['response_fields'], 'names.common');
+      expect(request.url.queryParameters['limit'], '100');
+      expect(request.url.queryParameters['offset'], '0');
+      expect(request.headers['Authorization'], 'Bearer test-key');
+      return http.Response(
+        jsonEncode({
+          'data': {
+            'objects': [
+              {
+                'names': {'common': 'Italy'},
+              },
+              {
+                'names': {'common': 'France'},
+              },
+              {
+                'names': {'common': 'Italy'},
+              },
+              {
+                'names': {'common': null},
+              },
+              {'invalid': true},
+            ],
+            'meta': {'more': false},
+          },
+        }),
+        200,
+      );
+    });
+
+    final countries = await CountryService(
+      client: client,
+      apiKeyOverride: 'test-key',
+    ).fetchCountries();
+    expect(countries, ['France', 'Italy']);
+  });
+
+  test('CountryService rejects a missing API key before requesting', () async {
+    final client = MockClient((_) async {
+      fail('No request should be made without an API key');
+    });
+
+    expect(
+      CountryService(client: client, apiKeyOverride: '').fetchCountries(),
+      throwsA(isA<CountryServiceException>()),
+    );
+  });
+
+  test('CountryService reports non-success status codes', () async {
+    final client = MockClient((_) async => http.Response('Unavailable', 503));
+
+    expect(
+      CountryService(
+        client: client,
+        apiKeyOverride: 'test-key',
+      ).fetchCountries(),
+      throwsA(isA<CountryServiceException>()),
+    );
+  });
+
   testWidgets('Login is the initial screen and links to signup', (
     tester,
   ) async {
-    await tester.pumpWidget(const CapstoneAuthApp());
+    await tester.pumpWidget(
+      const CapstoneAuthApp(countryLoader: _loadTestCountries),
+    );
 
     expect(find.text('Welcome back'), findsOneWidget);
     expect(find.byKey(const Key('loginEmail')), findsOneWidget);
@@ -47,29 +120,40 @@ void main() {
   });
 
   testWidgets('Signup rejects empty fields', (tester) async {
-    await tester.pumpWidget(const CapstoneAuthApp());
+    await tester.pumpWidget(
+      const CapstoneAuthApp(countryLoader: _loadTestCountries),
+    );
     await tester.tap(find.byKey(const Key('goToSignup')));
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.byKey(const Key('signupButton')));
     await tester.tap(find.byKey(const Key('signupButton')));
     await tester.pump();
 
     expect(find.text('Username is required'), findsOneWidget);
     expect(find.text('Email is required'), findsOneWidget);
     expect(find.text('Password is required'), findsOneWidget);
+    expect(find.text('Country is required'), findsOneWidget);
   });
 
   testWidgets('Signup saves user and returns to login', (tester) async {
-    await tester.pumpWidget(const CapstoneAuthApp());
+    await tester.pumpWidget(
+      const CapstoneAuthApp(countryLoader: _loadTestCountries),
+    );
     await tester.tap(find.byKey(const Key('goToSignup')));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const Key('signupUsername')), 'Student');
+    await tester.tap(find.byKey(const Key('signupCountry')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Italy').last);
+    await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('signupEmail')),
       'student@example.com',
     );
     await tester.enterText(find.byKey(const Key('signupPassword')), 'secret');
+    await tester.ensureVisible(find.byKey(const Key('signupButton')));
     await tester.tap(find.byKey(const Key('signupButton')));
     await tester.pumpAndSettle();
 
@@ -77,8 +161,38 @@ void main() {
     expect(preferences.getString('username'), 'Student');
     expect(preferences.getString('email'), 'student@example.com');
     expect(preferences.getString('password'), 'secret');
+    expect(preferences.getString('country'), 'Italy');
     expect(preferences.getBool(AppPreferences.onboardingCompletedKey), isFalse);
     expect(find.text('Welcome back'), findsOneWidget);
+  });
+
+  testWidgets('Signup shows country loading and handles API errors', (
+    tester,
+  ) async {
+    final pendingCountries = Completer<List<String>>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SignupScreen(countryLoader: () => pendingCountries.future),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Loading countries...'), findsOneWidget);
+
+    pendingCountries.complete(['Italy']);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('signupCountry')), findsOneWidget);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SignupScreen(
+          key: UniqueKey(),
+          countryLoader: () async => throw Exception('network error'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Unable to load countries'), findsOneWidget);
+    expect(find.byKey(const Key('retryCountriesButton')), findsOneWidget);
   });
 
   testWidgets('First login completes preferences onboarding before Home', (

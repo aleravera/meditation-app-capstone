@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+rest_countries_key.json
+rest_countries_key.json
 
 # Symbolication related
 app.*.symbols

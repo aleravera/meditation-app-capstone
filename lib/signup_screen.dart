@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_preferences.dart';
+import 'country_list.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+  const SignupScreen({super.key, this.countryLoader});
+
+  final CountryLoader? countryLoader;
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -15,9 +18,19 @@ class _SignupScreenState extends State<SignupScreen> {
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  List<String> _countries = const [];
+  String? _selectedCountry;
+  String? _countryLoadError;
+  bool _isLoadingCountries = true;
   bool _isLoading = false;
 
   static final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCountries();
+  }
 
   @override
   void dispose() {
@@ -39,6 +52,31 @@ class _SignupScreenState extends State<SignupScreen> {
     return null;
   }
 
+  // Loads real country names from REST Countries when Signup opens.
+  Future<void> _loadCountries() async {
+    setState(() {
+      _isLoadingCountries = true;
+      _countryLoadError = null;
+    });
+
+    try {
+      final loader = widget.countryLoader ?? CountryService().fetchCountries;
+      final countries = await loader();
+      if (!mounted) return;
+      setState(() {
+        _countries = countries;
+        _isLoadingCountries = false;
+      });
+    } catch (_) {
+      // Keep Signup usable and offer Retry instead of crashing on API errors.
+      if (!mounted) return;
+      setState(() {
+        _countryLoadError = 'Unable to load countries';
+        _isLoadingCountries = false;
+      });
+    }
+  }
+
   Future<void> _signUp() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) {
@@ -53,6 +91,7 @@ class _SignupScreenState extends State<SignupScreen> {
     await preferences.setString('username', _usernameController.text.trim());
     await preferences.setString('email', _emailController.text.trim());
     await preferences.setString('password', _passwordController.text);
+    await preferences.setString('country', _selectedCountry!);
     // A newly registered local account must complete first-access onboarding.
     await AppPreferences.saveOnboardingCompleted(false);
 
@@ -125,6 +164,8 @@ class _SignupScreenState extends State<SignupScreen> {
                               _validateRequired(value, 'Username'),
                         ),
                         const SizedBox(height: 16),
+                        _buildCountryField(),
+                        const SizedBox(height: 16),
                         TextFormField(
                           key: const Key('signupEmail'),
                           controller: _emailController,
@@ -153,7 +194,9 @@ class _SignupScreenState extends State<SignupScreen> {
                         const SizedBox(height: 22),
                         ElevatedButton(
                           key: const Key('signupButton'),
-                          onPressed: _isLoading ? null : _signUp,
+                          onPressed: _isLoading || _isLoadingCountries
+                              ? null
+                              : _signUp,
                           child: _isLoading
                               ? const SizedBox.square(
                                   dimension: 22,
@@ -189,6 +232,86 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCountryField() {
+    if (_isLoadingCountries) {
+      return Container(
+        key: const Key('countryLoading'),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Row(
+          children: [
+            SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 14),
+            Expanded(child: Text('Loading countries...')),
+          ],
+        ),
+      );
+    }
+
+    if (_countryLoadError != null) {
+      return Container(
+        key: const Key('countryError'),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: Theme.of(context).colorScheme.onErrorContainer,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                _countryLoadError!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                ),
+              ),
+            ),
+            TextButton(
+              key: const Key('retryCountriesButton'),
+              onPressed: _loadCountries,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return DropdownButtonFormField<String>(
+      key: const Key('signupCountry'),
+      initialValue: _selectedCountry,
+      isExpanded: true,
+      decoration: const InputDecoration(
+        labelText: 'Country',
+        prefixIcon: Icon(Icons.public),
+      ),
+      hint: const Text('Select your country'),
+      items: _countries
+          .map(
+            (country) => DropdownMenuItem<String>(
+              value: country,
+              child: Text(country, overflow: TextOverflow.ellipsis),
+            ),
+          )
+          .toList(),
+      onChanged: (value) => setState(() => _selectedCountry = value),
+      validator: (value) => value == null ? 'Country is required' : null,
     );
   }
 }
