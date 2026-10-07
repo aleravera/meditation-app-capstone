@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'about_screen.dart';
 import 'detail_screen.dart';
 import 'meditation.dart';
 import 'settings_screen.dart';
@@ -16,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _username = 'Friend';
+  String? _email;
 
   static const _meditations = [
     Meditation(
@@ -56,17 +58,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUsername();
+    _loadUserData();
   }
 
-  // Reads the account name saved during Signup for the welcome message.
-  Future<void> _loadUsername() async {
+  // Reads the account details saved during Signup for Home and the Drawer.
+  Future<void> _loadUserData() async {
     final preferences = await SharedPreferences.getInstance();
     final savedUsername = preferences.getString('username')?.trim();
+    final savedEmail = preferences.getString('email')?.trim();
     if (!mounted) return;
     setState(() {
       if (savedUsername != null && savedUsername.isNotEmpty) {
         _username = savedUsername;
+      }
+      if (savedEmail != null && savedEmail.isNotEmpty) {
+        _email = savedEmail;
       }
     });
   }
@@ -92,15 +98,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showMenuPlaceholder(String label) {
+  void _openReports() {
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$label is not required for this laboratory.')),
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const _ReportsScreen()),
+    );
+  }
+
+  void _openAbout() {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const AboutScreen()),
     );
   }
 
   // Sign Out clears the navigation history but keeps the locally saved account.
   void _signOut() {
+    Navigator.pop(context);
     Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
   }
 
@@ -127,10 +143,14 @@ class _HomeScreenState extends State<HomeScreen> {
       drawer: Drawer(
         key: const Key('homeDrawer'),
         child: SafeArea(
-          child: Column(
+          child: ListView(
+            padding: EdgeInsets.zero,
             children: [
               DrawerHeader(
                 margin: EdgeInsets.zero,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                ),
                 child: Row(
                   children: [
                     CircleAvatar(
@@ -143,43 +163,75 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    const Expanded(
-                      child: Text(
-                        'Mindful Moments',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello, $_username!',
+                            key: const Key('drawerGreeting'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          if (_email != null) ...[
+                            const SizedBox(height: 5),
+                            Text(
+                              _email!,
+                              key: const Key('drawerEmail'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimaryContainer,
+                                  ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.home_outlined),
+                leading: const Icon(Icons.home),
                 title: const Text('Home'),
                 onTap: () => Navigator.pop(context),
               ),
               ListTile(
-                key: const Key('drawerSettingsButton'),
-                leading: const Icon(Icons.settings_outlined),
-                title: const Text('Settings'),
+                key: const Key('drawerAccountSettingsButton'),
+                leading: const Icon(Icons.settings),
+                title: const Text('Account Settings'),
                 onTap: () {
                   Navigator.pop(context);
                   _openSettings();
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.notifications_outlined),
+                key: const Key('drawerNotificationsButton'),
+                leading: const Icon(Icons.notifications),
                 title: const Text('Notifications'),
-                onTap: () => _showMenuPlaceholder('Notifications'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openSettings();
+                },
               ),
               ListTile(
-                leading: const Icon(Icons.assessment_outlined),
+                key: const Key('drawerReportsButton'),
+                leading: const Icon(Icons.bar_chart),
                 title: const Text('Reports'),
-                onTap: () => _showMenuPlaceholder('Reports'),
+                onTap: _openReports,
               ),
-              const Spacer(),
+              ListTile(
+                key: const Key('drawerAboutButton'),
+                leading: const Icon(Icons.info_outline),
+                title: const Text('About'),
+                onTap: _openAbout,
+              ),
               const Divider(height: 1),
               ListTile(
                 key: const Key('signOutButton'),
@@ -260,6 +312,24 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportsScreen extends StatelessWidget {
+  const _ReportsScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: const Key('reportsScreen'),
+      appBar: AppBar(title: const Text('Reports')),
+      body: const Center(
+        child: Text(
+          'Reports coming soon',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
     );

@@ -285,12 +285,69 @@ void main() {
     await tester.tap(find.byTooltip('Open navigation menu'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('homeDrawer')), findsOneWidget);
+    expect(find.text('Hello, Student!'), findsWidgets);
+    expect(find.byKey(const Key('drawerEmail')), findsOneWidget);
+    expect(find.text('student@example.com'), findsOneWidget);
+    expect(find.text('Account Settings'), findsOneWidget);
     expect(find.text('Notifications'), findsOneWidget);
     expect(find.text('Reports'), findsOneWidget);
+    expect(find.text('About'), findsOneWidget);
 
+    await tester.tap(find.byKey(const Key('drawerAccountSettingsButton')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('settingsScreen')), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('drawerNotificationsButton')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('settingsNotificationsSwitch')),
+      findsOneWidget,
+    );
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('drawerReportsButton')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('reportsScreen')), findsOneWidget);
+    expect(find.text('Reports coming soon'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('drawerAboutButton')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('aboutScreen')), findsOneWidget);
+    expect(find.text('About Mindful Moments'), findsOneWidget);
+    expect(find.text('Flutter'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('signOutButton')));
     await tester.pumpAndSettle();
     expect(find.text('Welcome back'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Welcome back'), findsOneWidget);
+    expect(find.byKey(const Key('homeScreen')), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const Key('loginEmail')),
+      'student@example.com',
+    );
+    await tester.enterText(find.byKey(const Key('loginPassword')), 'secret');
+    await tester.tap(find.byKey(const Key('loginButton')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('homeScreen')), findsOneWidget);
   });
 
   testWidgets('Login rejects incorrect credentials', (tester) async {
