@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_preferences.dart';
+import 'personal_info_screen.dart';
 import 'preferences_form.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -71,6 +72,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
+                Text(
+                  'Account',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  child: ListTile(
+                    key: const Key('personalInfoSettingsTile'),
+                    leading: const Icon(Icons.person_outline),
+                    title: const Text('Personal Info'),
+                    subtitle: const Text('Update your profile information'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const PersonalInfoScreen(),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
                 Text(
                   'Preferences',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(

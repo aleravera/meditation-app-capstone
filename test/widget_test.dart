@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:capstone_auth_app/app_preferences.dart';
 import 'package:capstone_auth_app/country_list.dart';
 import 'package:capstone_auth_app/main.dart';
+import 'package:capstone_auth_app/personal_info_screen.dart';
 import 'package:capstone_auth_app/signup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -396,6 +397,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('settingsScreen')), findsOneWidget);
+    expect(find.byKey(const Key('personalInfoSettingsTile')), findsOneWidget);
     expect(find.text('21:30'), findsOneWidget);
     expect(
       tester
@@ -412,6 +414,13 @@ void main() {
       Brightness.dark,
     );
 
+    await tester.tap(find.byKey(const Key('personalInfoSettingsTile')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('personalInfoScreen')), findsOneWidget);
+    expect(find.text('Personal Info'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
     await tester.tap(find.byKey(const Key('settingsNotificationsSwitch')));
     await tester.pumpAndSettle();
     final preferences = await SharedPreferences.getInstance();
@@ -427,6 +436,146 @@ void main() {
         tester.element(find.byKey(const Key('settingsScreen'))),
       ).brightness,
       Brightness.light,
+    );
+  });
+
+  testWidgets('Personal Info loads, saves, and reloads all profile data', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'name': 'Existing Name',
+      'username': 'Student',
+      'age': 31.0,
+      'country': 'Italy',
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(home: PersonalInfoScreen(countryLoader: _loadTestCountries)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('personalInfoName')))
+          .controller
+          ?.text,
+      'Existing Name',
+    );
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('personalInfoUsername')))
+          .controller
+          ?.text,
+      'Student',
+    );
+    expect(find.text('Age: 31'), findsOneWidget);
+    expect(
+      tester
+          .widget<DropdownButtonFormField<String>>(
+            find.byKey(const Key('personalInfoCountry')),
+          )
+          .initialValue,
+      'Italy',
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('personalInfoName')),
+      'Updated Name',
+    );
+    await tester.enterText(
+      find.byKey(const Key('personalInfoUsername')),
+      'UpdatedUser',
+    );
+    tester
+        .widget<Slider>(find.byKey(const Key('personalInfoAgeSlider')))
+        .onChanged
+        ?.call(42);
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('personalInfoCountry')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('France').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('savePersonalInfoButton')));
+    await tester.tap(find.byKey(const Key('savePersonalInfoButton')));
+    await tester.pumpAndSettle();
+
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.getString('name'), 'Updated Name');
+    expect(preferences.getString('username'), 'UpdatedUser');
+    expect(preferences.getDouble('age'), 42);
+    expect(preferences.getString('country'), 'France');
+    expect(find.text('Profile updated successfully'), findsOneWidget);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PersonalInfoScreen(
+          key: UniqueKey(),
+          countryLoader: _loadTestCountries,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('personalInfoName')))
+          .controller
+          ?.text,
+      'Updated Name',
+    );
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('personalInfoUsername')))
+          .controller
+          ?.text,
+      'UpdatedUser',
+    );
+    expect(find.text('Age: 42'), findsOneWidget);
+    expect(
+      tester
+          .widget<DropdownButtonFormField<String>>(
+            find.byKey(const Key('personalInfoCountry')),
+          )
+          .initialValue,
+      'France',
+    );
+  });
+
+  testWidgets('Personal Info retries country loading after an API error', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({'country': 'Italy'});
+    var attempts = 0;
+
+    Future<List<String>> retryingCountryLoader() async {
+      attempts++;
+      if (attempts == 1) throw Exception('temporary API error');
+      return ['France', 'Italy'];
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PersonalInfoScreen(countryLoader: retryingCountryLoader),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('personalInfoCountryError')), findsOneWidget);
+    expect(find.text('Current country: Italy'), findsOneWidget);
+    expect(attempts, 1);
+
+    await tester.tap(find.byKey(const Key('retryPersonalInfoCountriesButton')));
+    await tester.pumpAndSettle();
+
+    expect(attempts, 2);
+    expect(find.byKey(const Key('personalInfoCountry')), findsOneWidget);
+    expect(
+      tester
+          .widget<DropdownButtonFormField<String>>(
+            find.byKey(const Key('personalInfoCountry')),
+          )
+          .initialValue,
+      'Italy',
     );
   });
 }
