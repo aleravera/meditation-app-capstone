@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AppPreferences {
   static const themeModeKey = 'themeMode';
   static const notificationsEnabledKey = 'notificationsEnabled';
+  static const notificationMeditationsKey = 'notificationMeditations';
+  static const notificationTimesKey = 'notificationTimes';
   static const reminderTimeKey = 'reminderTime';
   static const onboardingCompletedKey = 'onboardingCompleted';
 
@@ -36,6 +38,26 @@ class AppPreferences {
     final preferences = await SharedPreferences.getInstance();
     return preferences.getBool(notificationsEnabledKey) ??
         defaultNotificationsEnabled;
+  }
+
+  static Future<void> saveNotificationMeditations(List<String> values) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setStringList(notificationMeditationsKey, values);
+  }
+
+  static Future<List<String>> readNotificationMeditations() async {
+    final preferences = await SharedPreferences.getInstance();
+    return preferences.getStringList(notificationMeditationsKey) ?? const [];
+  }
+
+  static Future<void> saveNotificationTimes(List<String> values) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setStringList(notificationTimesKey, values);
+  }
+
+  static Future<List<String>> readNotificationTimes() async {
+    final preferences = await SharedPreferences.getInstance();
+    return preferences.getStringList(notificationTimesKey) ?? const [];
   }
 
   static Future<void> saveReminderTime(String value) async {

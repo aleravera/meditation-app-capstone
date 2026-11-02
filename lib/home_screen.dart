@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'about_screen.dart';
 import 'detail_screen.dart';
 import 'meditation.dart';
+import 'notifications_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -103,6 +104,14 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute<void>(builder: (_) => const _ReportsScreen()),
+    );
+  }
+
+  void _openNotifications() {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(builder: (_) => const NotificationsScreen()),
     );
   }
 
@@ -215,10 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 key: const Key('drawerNotificationsButton'),
                 leading: const Icon(Icons.notifications),
                 title: const Text('Notifications'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openSettings();
-                },
+                onTap: _openNotifications,
               ),
               ListTile(
                 key: const Key('drawerReportsButton'),

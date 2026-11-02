@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:capstone_auth_app/app_preferences.dart';
+import 'package:capstone_auth_app/browser_notification_service_stub.dart';
 import 'package:capstone_auth_app/country_list.dart';
 import 'package:capstone_auth_app/main.dart';
+import 'package:capstone_auth_app/notifications_screen.dart';
 import 'package:capstone_auth_app/personal_info_screen.dart';
+import 'package:capstone_auth_app/settings_screen.dart';
 import 'package:capstone_auth_app/signup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,27 +17,83 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 Future<List<String>> _loadTestCountries() async => ['France', 'Italy'];
 
+Future<void> _selectTimeFromPicker(
+  WidgetTester tester, {
+  required Finder tile,
+  required String currentMinute,
+  required String hour,
+  required String minute,
+  required String period,
+}) async {
+  await Scrollable.ensureVisible(
+    tester.element(tile),
+    alignment: 0.5,
+    duration: Duration.zero,
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(tile);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byIcon(Icons.keyboard_outlined));
+  await tester.pumpAndSettle();
+
+  final timeFields = find.byType(TextField);
+  final currentValues = tester
+      .widgetList<TextField>(timeFields)
+      .map((field) => field.controller?.text)
+      .toList();
+  final minuteIndex = currentValues.indexOf(currentMinute);
+  expect(minuteIndex, isNot(-1));
+  final hourIndex = minuteIndex == 0 ? 1 : 0;
+
+  await tester.enterText(timeFields.at(hourIndex), hour);
+  await tester.pump();
+  await tester.enterText(timeFields.at(minuteIndex), minute);
+  await tester.pump();
+  expect(
+    tester.widget<TextField>(timeFields.at(hourIndex)).controller?.text,
+    hour,
+  );
+  expect(
+    tester.widget<TextField>(timeFields.at(minuteIndex)).controller?.text,
+    minute,
+  );
+  await tester.tap(find.text(period));
+  await tester.pump();
+  await tester.tap(find.text('OK'));
+  await tester.pumpAndSettle();
+  expect(find.byType(TimePickerDialog), findsNothing);
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('Settings use defaults and persist all three values', () async {
+  test('Settings use defaults and persist all preference values', () async {
     expect(await AppPreferences.readThemeMode(), 'Light');
     expect(await AppPreferences.readNotificationsEnabled(), isTrue);
     expect(await AppPreferences.readReminderTime(), '08:00');
     expect(await AppPreferences.readOnboardingCompleted(), isFalse);
+    expect(await AppPreferences.readNotificationMeditations(), isEmpty);
+    expect(await AppPreferences.readNotificationTimes(), isEmpty);
 
     await AppPreferences.saveThemeMode('Dark');
     await AppPreferences.saveNotificationsEnabled(false);
     await AppPreferences.saveReminderTime('21:30');
     await AppPreferences.saveOnboardingCompleted(true);
+    await AppPreferences.saveNotificationMeditations(['Deep Focus']);
+    await AppPreferences.saveNotificationTimes(['Morning', 'Evening']);
 
     expect(await AppPreferences.readThemeMode(), 'Dark');
     expect(await AppPreferences.readFlutterThemeMode(), ThemeMode.dark);
     expect(await AppPreferences.readNotificationsEnabled(), isFalse);
     expect(await AppPreferences.readReminderTime(), '21:30');
     expect(await AppPreferences.readOnboardingCompleted(), isTrue);
+    expect(await AppPreferences.readNotificationMeditations(), ['Deep Focus']);
+    expect(await AppPreferences.readNotificationTimes(), [
+      'Morning',
+      'Evening',
+    ]);
   });
 
   test('CountryService parses, deduplicates and sorts valid names', () async {
@@ -304,10 +363,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('drawerNotificationsButton')));
     await tester.pumpAndSettle();
-    expect(
-      find.byKey(const Key('settingsNotificationsSwitch')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('notificationsScreen')), findsOneWidget);
+    expect(find.text('Enable Notifications'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
 
@@ -578,4 +635,235 @@ void main() {
       'Italy',
     );
   });
+
+  testWidgets('Notifications persist selections and handle test sending', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      AppPreferences.notificationsEnabledKey: false,
+      AppPreferences.reminderTimeKey: '07:30',
+    });
+    var sentNotifications = 0;
+
+    Future<BrowserNotificationResult> sendTestNotification() async {
+      sentNotifications++;
+      return BrowserNotificationResult.sent;
+    }
+
+    Future<void> reveal(Finder finder) async {
+      await Scrollable.ensureVisible(
+        tester.element(finder),
+        alignment: 0.5,
+        duration: Duration.zero,
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NotificationsScreen(testNotificationSender: sendTestNotification),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<SwitchListTile>(
+            find.byKey(const Key('enableNotificationsSwitch')),
+          )
+          .value,
+      isFalse,
+    );
+    expect(find.text('07:30'), findsOneWidget);
+
+    await reveal(find.byKey(const Key('sendTestNotificationButton')));
+    await tester.tap(find.byKey(const Key('sendTestNotificationButton')));
+    await tester.pump();
+    expect(find.text('Enable notifications first'), findsOneWidget);
+    expect(sentNotifications, 0);
+
+    await reveal(find.byKey(const Key('enableNotificationsSwitch')));
+    await tester.tap(find.byKey(const Key('enableNotificationsSwitch')));
+    await tester.pumpAndSettle();
+    await reveal(
+      find.byKey(const Key('notificationMeditation-Mindful Breathing')),
+    );
+    await tester.tap(
+      find.byKey(const Key('notificationMeditation-Mindful Breathing')),
+    );
+    await tester.pumpAndSettle();
+    await reveal(find.byKey(const Key('notificationMeditation-Deep Focus')));
+    await tester.tap(
+      find.byKey(const Key('notificationMeditation-Deep Focus')),
+    );
+    await tester.pumpAndSettle();
+    await reveal(find.byKey(const Key('notificationTime-Morning')));
+    await tester.tap(find.byKey(const Key('notificationTime-Morning')));
+    await tester.pumpAndSettle();
+    await reveal(find.byKey(const Key('notificationTime-Evening')));
+    await tester.tap(find.byKey(const Key('notificationTime-Evening')));
+    await tester.pumpAndSettle();
+
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.getBool(AppPreferences.notificationsEnabledKey), isTrue);
+    expect(
+      preferences.getStringList(AppPreferences.notificationMeditationsKey),
+      ['Mindful Breathing', 'Deep Focus'],
+    );
+    expect(preferences.getStringList(AppPreferences.notificationTimesKey), [
+      'Morning',
+      'Evening',
+    ]);
+
+    ScaffoldMessenger.of(
+      tester.element(find.byKey(const Key('notificationsScreen'))),
+    ).clearSnackBars();
+    await reveal(find.byKey(const Key('sendTestNotificationButton')));
+    await tester.tap(find.byKey(const Key('sendTestNotificationButton')));
+    await tester.pumpAndSettle();
+    expect(sentNotifications, 1);
+    expect(find.text('Test notification sent'), findsOneWidget);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: NotificationsScreen(
+          key: UniqueKey(),
+          testNotificationSender: sendTestNotification,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<SwitchListTile>(
+            find.byKey(const Key('enableNotificationsSwitch')),
+          )
+          .value,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<FilterChip>(
+            find.byKey(const Key('notificationMeditation-Mindful Breathing')),
+          )
+          .selected,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<FilterChip>(
+            find.byKey(const Key('notificationMeditation-Deep Focus')),
+          )
+          .selected,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<FilterChip>(find.byKey(const Key('notificationTime-Morning')))
+          .selected,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<FilterChip>(find.byKey(const Key('notificationTime-Evening')))
+          .selected,
+      isTrue,
+    );
+
+    await reveal(find.byKey(const Key('enableNotificationsSwitch')));
+    await tester.tap(find.byKey(const Key('enableNotificationsSwitch')));
+    await tester.pumpAndSettle();
+    ScaffoldMessenger.of(
+      tester.element(find.byKey(const Key('notificationsScreen'))),
+    ).clearSnackBars();
+    await reveal(find.byKey(const Key('sendTestNotificationButton')));
+    await tester.tap(find.byKey(const Key('sendTestNotificationButton')));
+    await tester.pump();
+    expect(find.text('Enable notifications first'), findsOneWidget);
+    expect(sentNotifications, 1);
+  });
+
+  testWidgets(
+    'Reminder time stays synchronized between Notifications and Settings',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({
+        AppPreferences.reminderTimeKey: '07:30',
+      });
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(alwaysUse24HourFormat: true),
+            child: NotificationsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _selectTimeFromPicker(
+        tester,
+        tile: find.byKey(const Key('notificationsReminderTimeTile')),
+        currentMinute: '30',
+        hour: '6',
+        minute: '30',
+        period: 'PM',
+      );
+
+      final preferences = await SharedPreferences.getInstance();
+      expect(preferences.getString(AppPreferences.reminderTimeKey), '18:30');
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('notificationsReminderTimeTile')),
+          matching: find.text('18:30'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Reminder time updated'), findsOneWidget);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(alwaysUse24HourFormat: true),
+            child: SettingsScreen(onThemeModeChanged: (_) {}),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('settingsReminderTimeTile')),
+          matching: find.text('18:30'),
+        ),
+        findsOneWidget,
+      );
+
+      await _selectTimeFromPicker(
+        tester,
+        tile: find.byKey(const Key('settingsReminderTimeTile')),
+        currentMinute: '30',
+        hour: '9',
+        minute: '00',
+        period: 'PM',
+      );
+      expect(preferences.getString(AppPreferences.reminderTimeKey), '21:00');
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(alwaysUse24HourFormat: true),
+            child: NotificationsScreen(key: UniqueKey()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('notificationsReminderTimeTile')),
+          matching: find.text('21:00'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 }
