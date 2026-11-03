@@ -1,17 +1,31 @@
-# capstone_auth_app
+# Mindful Moments - Marketplace Listing
 
-A new Flutter project.
+## App Details
 
-## Getting Started
+**App Name:** Mindful Moments
 
-This project is a starting point for a Flutter application.
+**Short Description:**  
+Meditation, reminders and mindful routines in one simple app.
 
-A few resources to get you started if this is your first Flutter project:
+## Full Description
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+[descrizione completa]
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Keywords
+
+Meditation, Mindfulness, Relaxation, Breathing, Focus, Reminders, Wellness, Daily Routine
+
+## Media Assets
+
+### App Icon
+- `marketplace_assets/icon.png`
+
+### Screenshots
+1. `marketplace_assets/screenshot1-login.png` - Login screen
+2. `marketplace_assets/screenshot2-home.png` - Home screen
+3. `marketplace_assets/screenshot3-detail.png` - Meditation detail screen
+4. `marketplace_assets/screenshot4-settings.png` - Settings / Personal Info screen
+5. `marketplace_assets/screenshot5-notifications.png` - Notifications configuration screen
+
+### Promotional Video
+- `marketplace_assets/promo_video.mp4`
