@@ -134,9 +134,26 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       key: const Key('homeScreen'),
       appBar: AppBar(
-        title: const Text(
-          'Mindful Moments',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'assets/images/app_logo.png',
+                key: const Key('homeAppLogo'),
+                width: 36,
+                height: 36,
+                fit: BoxFit.contain,
+                semanticLabel: 'Mindful Moments logo',
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Mindful Moments',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
         ),
         actions: [
           IconButton(

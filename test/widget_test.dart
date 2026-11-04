@@ -294,6 +294,7 @@ void main() {
     expect(preferences.getString(AppPreferences.reminderTimeKey), '08:00');
     expect(preferences.getBool(AppPreferences.onboardingCompletedKey), isTrue);
     expect(find.byKey(const Key('homeScreen')), findsOneWidget);
+    expect(find.byKey(const Key('homeAppLogo')), findsOneWidget);
     expect(
       Theme.of(tester.element(find.byKey(const Key('homeScreen')))).brightness,
       Brightness.dark,
@@ -328,7 +329,21 @@ void main() {
     expect(find.text('Body Scan Meditation'), findsOneWidget);
     expect(find.text('Deep Focus'), findsOneWidget);
     expect(find.byKey(const Key('homeFab')), findsOneWidget);
+    expect(find.byKey(const Key('homeAppLogo')), findsOneWidget);
+    final homeLogo = tester.widget<Image>(find.byKey(const Key('homeAppLogo')));
+    expect(homeLogo.width, 36);
+    expect(homeLogo.height, 36);
+    expect(
+      (homeLogo.image as AssetImage).assetName,
+      'assets/images/app_logo.png',
+    );
     expect(find.byKey(const Key('loginError')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('settingsButton')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('settingsScreen')), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('meditation-Mindful Breathing')));
     await tester.pumpAndSettle();
